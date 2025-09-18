@@ -40,3 +40,6 @@ Thumbs.db
 # Build outputs
 build/
 dist/
+
+# Secrets
+employee-management/src/server/serviceAccountKey.json
