@@ -14,7 +14,7 @@ export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // ✅ Lấy employee từ localStorage
+  // Get employee from localStorage
   const savedEmployee = localStorage.getItem("employee");
   const employee = savedEmployee ? JSON.parse(savedEmployee) : null;
   const userId = employee?.id || null;
@@ -53,7 +53,7 @@ export default function EditProfilePage() {
       const docRef = doc(db, "employees", userId);
       await updateDoc(docRef, profile);
 
-      // ✅ Update lại localStorage
+      // Update from localStorage
       localStorage.setItem(
         "employee",
         JSON.stringify({ id: userId, ...profile })
@@ -66,14 +66,14 @@ export default function EditProfilePage() {
     setSaving(false);
   };
 
-  // ✅ Trạng thái Loading
+  // Loading
   if (loading) {
     return (
       <div className="p-6 text-center text-gray-600">Loading...</div>
     );
   }
 
-  // ✅ Nếu chưa login
+  // Check login
   if (!userId) {
     return (
       <div className="p-6 text-center text-red-600">
@@ -82,7 +82,7 @@ export default function EditProfilePage() {
     );
   }
 
-  // ✅ Hiển thị form edit
+  // Load form edit
   return (
     <div className="p-6 max-w-lg mx-auto">
       {/* Header */}

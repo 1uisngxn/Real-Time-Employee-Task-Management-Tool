@@ -6,7 +6,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // lấy setupToken từ query (nếu có)
+  // setupToken from query param
   const query = new URLSearchParams(location.search);
   const setupToken = query.get("setupToken");
 
@@ -23,7 +23,6 @@ function LoginPage() {
       const data = await res.json();
       if (data.success) {
         alert("OTP sent to email!");
-        // chuyển sang trang nhập OTP, kèm theo setupToken (nếu có)
         navigate("/employee/validate", { state: { email, setupToken } });
       } else {
         alert("Error: " + data.message);
@@ -34,29 +33,57 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="bg-white shadow-md rounded-xl p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+      <div className="bg-white shadow-lg rounded-2xl p-10 w-full max-w-md">
+        {/* Back button */}
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex items-center text-gray-600 hover:text-blue-600 mb-6"
+        >
+          ← <span className="ml-1 text-sm">Back</span>
+        </button>
+
+        {/* Title */}
+        <h1 className="text-3xl p-3 font-extrabold text-center text-gray-800">
+          Sign In
+        </h1>
+        <p className="text-gray-500 text-center text-base ">
+          Please enter your email to sign in
+        </p>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <label htmlFor="email" className="sr-only">
+            Email Address
+          </label>
           <input
+            id="email"
             type="email"
-            placeholder="Your email address"
+            placeholder="Your Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-5 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
           >
             Next
           </button>
         </form>
-        <p className="text-center text-sm mt-4">
+
+        {/* Extra info */}
+        <p className="text-gray-500 text-sm text-center mt-5">
+          passwordless authentication methods.
+        </p>
+
+        {/* Footer */}
+        <p className="text-center text-sm mt-6 text-gray-600">
           Don’t have an account?{" "}
-          <Link to="/signup" className="text-blue-600 hover:underline">
-            Sign Up
+          <Link to="/signup" className="text-blue-600 font-medium hover:underline">
+            Sign up
           </Link>
         </p>
       </div>

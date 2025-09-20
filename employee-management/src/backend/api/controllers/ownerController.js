@@ -3,7 +3,7 @@ const { db, admin } = require("../../firebase");
 const { getAuth } = require("firebase-admin/auth");
 const sgMail = require("@sendgrid/mail");
 
-// Cấu hình SendGrid (dùng cho gửi mail setup employee)
+// SendGrid setup
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL;
 
@@ -67,10 +67,10 @@ exports.createEmployee = async (req, res) => {
     if (!snapshot.empty) {
       return res.status(400).json({ error: "Email already exists" });
     }
-    // Chuẩn hóa số điện thoại về E.164
+    // format phone
     const formattedPhone = formatPhoneNumber(phone);
 
-     // 🔑 Tạo user trong Firebase Auth (password tạm)
+     // Create user with temp password
     const auth = getAuth();
     const userRecord = await auth.createUser({
       email,
@@ -145,14 +145,14 @@ exports.createEmployee = async (req, res) => {
 
     try {
       await sgMail.send(msg);
-      console.log("✅ Setup email sent to:", email);
+      console.log(" Setup email sent to:", email);
     } catch (err) {
-      console.error("❌ SendGrid error:", err.response?.body || err.message);
+      console.error(" SendGrid error:", err.response?.body || err.message);
     }
 
     return res.json({ success: true, employee: employeeData });
   } catch (err) {
-    console.error("❌ createEmployee error:", err);
+    console.error(" createEmployee error:", err);
     return res.status(500).json({ error: err.message });
   }
 };
@@ -179,7 +179,7 @@ exports.updateEmployee = async (req, res) => {
 
     await docRef.update(updateData);
 
-    // Update Firebase Auth nếu có
+    // Update Firebase Auth 
     if (email && data.authUid) {
       const auth = getAuth();
       await auth.updateUser(data.authUid, { email });
@@ -187,7 +187,7 @@ exports.updateEmployee = async (req, res) => {
 
     return res.json({ success: true, updated: updateData });
   } catch (err) {
-    console.error("❌ updateEmployee error:", err);
+    console.error(" updateEmployee error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 };
@@ -199,7 +199,7 @@ exports.deleteEmployee = async (req, res) => {
     if (!employeeId)
       return res.status(400).json({ error: "employeeId required" });
 
-    // Lấy document nhân viên
+    // get document employee
     const docRef = db.collection("employees").doc(employeeId);
     const doc = await docRef.get();
 
@@ -209,25 +209,25 @@ exports.deleteEmployee = async (req, res) => {
     const data = doc.data();
     const authUid = data.authUid;
 
-    // Xóa Firestore
+    // Delete Firestore
     await docRef.delete();
-    console.log(`✅ Firestore employee deleted: ${employeeId}`);
+    console.log(` Firestore employee deleted: ${employeeId}`);
 
-    // Xóa Firebase Auth nếu có
+    // Delete Firebase Auth 
     if (authUid) {
       try {
         await admin.auth().deleteUser(authUid);
-        console.log(`✅ Firebase Auth user deleted: ${authUid}`);
+        console.log(` Firebase Auth user deleted: ${authUid}`);
       } catch (authErr) {
-        console.error(`❌ Failed to delete Firebase Auth user: ${authUid}`, authErr);
+        console.error(` Failed to delete Firebase Auth user: ${authUid}`, authErr);
       }
     } else {
-      console.log("⚠️ No authUid found for this employee, skipping Firebase Auth deletion.");
+      console.log(" No authUid found for this employee, skipping Firebase Auth deletion.");
     }
 
     return res.json({ success: true });
   } catch (err) {
-    console.error("❌ deleteEmployee error:", err);
+    console.error(" deleteEmployee error:", err);
     return res.status(500).json({ error: err.message || "Server error" });
   }
 };
@@ -249,7 +249,7 @@ exports.listEmployees = async (req, res) => {
 
     return res.json({ employees });
   } catch (err) {
-    console.error("❌ listEmployees error:", err);
+    console.error(" listEmployees error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 };
@@ -272,7 +272,7 @@ exports.getEmployee = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ getEmployee error:", err);
+    console.error(" getEmployee error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 };

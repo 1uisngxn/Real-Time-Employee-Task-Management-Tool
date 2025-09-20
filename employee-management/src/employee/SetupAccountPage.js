@@ -37,12 +37,12 @@ function SetupAccountPage() {
       const data = await res.json();
 
       if (data.success) {
-        // 👇 Nếu backend trả về customToken thì đăng nhập ngay
+        // if backend returns customToken, log the user in directly
         if (data.customToken) {
           localStorage.setItem("employee", JSON.stringify(data.employee));
           navigate("/employee/dashboard");
         } else {
-          // Nếu không thì chuyển sang trang login để nhân viên đăng nhập
+          // if no customToken, go to login page
           navigate("/employee/login", {
             state: { message: "Account created. Please login." },
           });

@@ -13,7 +13,7 @@ export default function OwnerDashboard() {
   const ownerId = localStorage.getItem("ownerId") || "owner_default";
 
   useEffect(() => {
-    // 🔎 Lấy danh sách employees từ Firestore realtime
+    // List Employee
     const unsub = onSnapshot(collection(db, "employees"), (snap) => {
       setEmployees(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     });

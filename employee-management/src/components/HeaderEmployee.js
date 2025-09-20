@@ -9,7 +9,7 @@ export default function HeaderEmployee() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 🔎 Lấy thông tin employee từ localStorage (do đã lưu khi login)
+    // Get employee form localStorage
     const savedEmployee = localStorage.getItem("employee");
     if (savedEmployee) {
       setEmployee(JSON.parse(savedEmployee));
@@ -17,7 +17,7 @@ export default function HeaderEmployee() {
   }, []);
 
   const handleLogout = () => {
-    // ❌ Xóa session login
+    // Delete session login
     localStorage.removeItem("employee");
     navigate("/employee/login");
   };
@@ -35,7 +35,7 @@ export default function HeaderEmployee() {
             <UserIcon className="w-5 h-5 text-gray-600" />
           </div>
           <span className="hidden md:block text-gray-800 font-medium">
-            {/* ✅ Ưu tiên username -> name -> fallback Khách */}
+            {/* username -> name -> fallback Guest */}
             {employee?.username || employee?.name || "Khách"}
           </span>
           <ChevronDownIcon

@@ -1,4 +1,3 @@
-// MessageBox.js
 import React, { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 
@@ -16,7 +15,7 @@ export default function MessageBox({ ownerId, employees }) {
     setSocket(s);
 
     s.on("connect", () => {
-      console.log("✅ Owner socket connected", s.id);
+      console.log("Owner socket connected", s.id);
       s.emit("join", { userId: ownerId, role: "owner" });
     });
 

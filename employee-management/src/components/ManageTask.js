@@ -13,7 +13,7 @@ export default function ManageTask() {
   const [tasks, setTasks] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // ✅ Load tasks từ Firebase khi vào trang
+  // Load tasks from Firebase 
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -27,7 +27,7 @@ export default function ManageTask() {
     setTasks(taskList);
   };
 
-  // ✅ Add new task vào Firestore
+  // Add new task to Firestore
   const handleAddTask = async (task) => {
     const docRef = await addDoc(collection(db, "tasks"), {
       ...task,
@@ -37,7 +37,7 @@ export default function ManageTask() {
     setTasks([...tasks, { id: docRef.id, ...task, status: "Pending" }]);
   };
 
-  // ✅ Toggle status
+  // Toggle status
   const handleToggle = async (task) => {
     const taskRef = doc(db, "tasks", task.id);
     const newStatus = task.status === "Pending" ? "Completed" : "Pending";
@@ -47,20 +47,20 @@ export default function ManageTask() {
     );
   };
 
-  // ✅ Delete task
+  // Delete task
   const handleDelete = async (taskId) => {
     await deleteDoc(doc(db, "tasks", taskId));
     setTasks(tasks.filter((t) => t.id !== taskId));
   };
 
-  // ✅ Modal CreateTask
+  // Modal CreateTask
   const CreateTask = ({ onClose, onAdd }) => {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [assignee, setAssignee] = useState("");
     const [employees, setEmployees] = useState([]);
 
-    // Load employees từ Firestore
+    // Load employees from Firestore
     useEffect(() => {
       const fetchEmployees = async () => {
         const querySnapshot = await getDocs(collection(db, "employees"));

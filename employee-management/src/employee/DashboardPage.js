@@ -11,7 +11,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import EmployeeChat from "../employee/EmployeeChat"; // ✅ import chat
+import EmployeeChat from "../employee/EmployeeChat"; 
 
 export default function EmployeeDashboard() {
   const [activePage, setActivePage] = useState("Manage Task");
@@ -19,16 +19,14 @@ export default function EmployeeDashboard() {
   const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
-    // 🔎 Lấy employee từ localStorage sau khi login
+    // Get employee from localStorage
     const savedEmployee = localStorage.getItem("employee");
     if (savedEmployee) {
       const emp = JSON.parse(savedEmployee);
       setEmployee(emp);
-
-      // ✅ Lấy tasks assign cho employee này
       const q = query(
         collection(db, "tasks"),
-        where("assigneeId", "==", emp.id) // ⚡️ field trùng với ManageTask
+        where("assigneeId", "==", emp.id) 
       );
       const unsub = onSnapshot(q, (snapshot) => {
         setTasks(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
@@ -43,7 +41,7 @@ export default function EmployeeDashboard() {
     await updateDoc(ref, { status: "done", doneAt: serverTimestamp() });
   };
 
-  // ✅ Reset task về pending
+  // ✅ Reset task to pending
   const resetTask = async (taskId) => {
     const ref = doc(db, "tasks", taskId);
     await updateDoc(ref, { status: "Pending", doneAt: null });

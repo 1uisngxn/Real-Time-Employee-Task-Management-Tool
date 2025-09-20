@@ -7,7 +7,7 @@ const { db } = require('./firebase');
 
 const app = express();
 
-// Cho phép frontend http://localhost:3000 gọi API
+// Accept frontend call API
 app.use(cors({
   origin: 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -33,10 +33,10 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-// 👉 thay vì app.listen, dùng http server
+// http server
 const server = http.createServer(app);
 
-// 👉 setup socket.io
+// setup socket.io
 const io = new Server(server, {
   cors: {
     origin: 'http://localhost:3000',
@@ -44,7 +44,7 @@ const io = new Server(server, {
   }
 });
 
-// 👉 lưu online users
+// save online users
 const online = {};
 
 function roomName(ownerId, empId) {
@@ -61,7 +61,7 @@ io.on('connection', (socket) => {
     console.log(`👤 ${role} ${userId} joined with socket ${socket.id}`);
   });
 
-  // khi joinRoom thì lấy lịch sử từ Firestore
+  // Get chat history when join room
   socket.on('joinRoom', async ({ ownerId, empId }) => {
     const room = roomName(ownerId, empId);
     socket.join(room);
@@ -82,7 +82,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // khi gửi message thì lưu vào Firestore và emit cho room
+  // Send message to room + save to Firestore
   socket.on('sendMessage', async ({ ownerId, empId, fromId, toId, text }) => {
     const room = roomName(ownerId, empId);
     const msg = { fromId, toId, text, ts: Date.now() };

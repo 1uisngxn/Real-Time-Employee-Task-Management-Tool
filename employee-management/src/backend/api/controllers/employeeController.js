@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL;
 
-// ==================== LOGIN EMAIL (SEND OTP) ====================
+// Login email with OTP
 export const loginEmail = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "email required" });
@@ -16,7 +16,7 @@ export const loginEmail = async (req, res) => {
   await db.collection("employeeCodes").doc(email).set({
     code,
     expiresAt: admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 5 * 60 * 1000) // 5 phút
+      new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
     ),
   });
 
@@ -41,7 +41,7 @@ export const loginEmail = async (req, res) => {
   }
 };
 
-// ==================== VALIDATE OTP ====================
+// Validate OTP
 export const validateAccessCode = async (req, res) => {
   const { email, accessCode } = req.body;
   if (!email || !accessCode)
@@ -57,7 +57,7 @@ export const validateAccessCode = async (req, res) => {
   if (data.expiresAt.toDate() < new Date())
     return res.status(400).json({ error: "Code expired" });
 
-  // ✅ Clear code
+  // Clear code
   await docRef.delete();
 
   // Lấy thông tin nhân viên
@@ -78,14 +78,14 @@ export const validateAccessCode = async (req, res) => {
   });
 };
 
-// ==================== SETUP ACCOUNT (FIRST TIME) ====================
+// Setup account (username + password)
 export const setupAccount = async (req, res) => {
   const { email, username, password } = req.body;
   if (!email || !username || !password)
     return res.status(400).json({ error: "email, username, password required" });
 
   try {
-    // check tồn tại nhân viên
+    // check mail
     const snapshot = await db.collection("employees").where("email", "==", email).get();
     if (snapshot.empty) return res.status(404).json({ error: "Employee not found" });
 
@@ -96,7 +96,7 @@ export const setupAccount = async (req, res) => {
       return res.status(400).json({ error: "Account already setup" });
     }
 
-    // check trùng username
+    // check username
     const userCheck = await db.collection("employees").where("username", "==", username).get();
     if (!userCheck.empty) {
       return res.status(400).json({ error: "Username already taken" });
@@ -116,7 +116,7 @@ export const setupAccount = async (req, res) => {
   }
 };
 
-// ==================== LOGIN EMPLOYEE ====================
+// Login with username + password
 export const loginEmployee = async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password)
@@ -135,7 +135,7 @@ export const loginEmployee = async (req, res) => {
 
     if (!isMatch) return res.status(400).json({ error: "Invalid username or password" });
 
-    // ✅ Generate JWT
+    // Generate JWT
     const token = jwt.sign(
       { id: employee.employeeId, role: employee.role },
       process.env.JWT_SECRET,

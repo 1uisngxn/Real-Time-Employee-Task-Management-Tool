@@ -14,10 +14,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Trang chọn role */}
+        {/* Page choose role */}
         <Route path="/chooseRole" element={<ChooseRole />} />
 
-        {/* Trang mặc định điều hướng về /login */}
+        {/* Default */}
         <Route path="/" element={<Navigate to="/chooseRole" replace />} />
 
         {/* Owner */}

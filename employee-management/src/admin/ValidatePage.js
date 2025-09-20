@@ -10,7 +10,7 @@ function ValidatePage() {
 
   const API_URL = "http://localhost:5000/api/owner";
 
-  // Xác minh OTP
+  // Verify OTP
   const handleVerify = async (e) => {
     e.preventDefault();
     try {
@@ -35,7 +35,7 @@ function ValidatePage() {
     }
   };
 
-  // Gửi lại mã OTP
+  // Resend OTP
   const handleResend = async () => {
     try {
       setLoading(true);
@@ -77,7 +77,7 @@ function ValidatePage() {
           </p>
         </div>
 
-        {/* Form nhập OTP */}
+        {/* Form OTP */}
         <form onSubmit={handleVerify} className="space-y-6">
           <input
             type="text"
