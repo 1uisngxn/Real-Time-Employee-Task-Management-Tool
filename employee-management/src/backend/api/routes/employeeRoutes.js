@@ -1,11 +1,10 @@
 const express = require("express");
-const router = express.Router();
-const empCtrl = require("../controllers/employeeController");
+const { loginEmail, validateAccessCode, setupAccount, loginEmployee } = require("../controllers/employeeController");
 
-router.post("/CreateEmployee", empCtrl.createEmployee);
-router.post("/GetEmployee", empCtrl.getEmployee);
-router.get("/GetEmployees", empCtrl.listEmployees);
-router.put("/UpdateEmployee", empCtrl.updateEmployee);
-router.delete("/DeleteEmployee", empCtrl.deleteEmployee);
+const router = express.Router();
+router.post("/LoginEmail", loginEmail);
+router.post("/ValidateAccessCode", validateAccessCode);
+router.post("/SetupAccount", setupAccount);
+router.post("/LoginEmployee", loginEmployee);
 
 module.exports = router;

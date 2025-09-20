@@ -1,126 +1,159 @@
-const { db, admin } = require("../../firebase");
+import { db, admin } from "../../firebase.js";
+import sgMail from "@sendgrid/mail";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-// CREATE employee
-exports.createEmployee = async (req, res) => {
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const FROM_EMAIL = process.env.FROM_EMAIL;
+
+// ==================== LOGIN EMAIL (SEND OTP) ====================
+export const loginEmail = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "email required" });
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  await db.collection("employeeCodes").doc(email).set({
+    code,
+    expiresAt: admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 5 * 60 * 1000) // 5 phút
+    ),
+  });
+
+  const msg = {
+    to: email,
+    from: FROM_EMAIL,
+    subject: "🔐 Your One-Time Passcode (OTP)",
+    html: `
+      <h3>Secure Login Verification</h3>
+      <p>Your OTP is:</p>
+      <h2 style="letter-spacing:4px;">${code}</h2>
+      <p>Code expires in <b>5 minutes</b>.</p>
+    `,
+  };
+
   try {
-    const { name, phone, email, role, address } = req.body;
-    if (!name || !phone || !email || !role) {
-      return res.status(400).json({ error: "name, phone, email, role are required" });
-    }
-
-    // check duplicate email
-    const snapshot = await db.collection("employees").where("email", "==", email).get();
-    if (!snapshot.empty) {
-      return res.status(400).json({ error: "Email already exists" });
-    }
-
-    const employeeRef = db.collection("employees").doc();
-    const employeeData = {
-      employeeId: employeeRef.id,
-      name,
-      phone,
-      email,
-      role,
-      address: address || "",
-      status: "Active",
-      createdAt: admin.firestore.Timestamp.now(),
-    };
-
-    await employeeRef.set(employeeData);
-
-    console.log(`[EMAIL MOCK] to ${email}: account created for ${name}`);
-
-    return res.json({ success: true, employee: employeeData });
+    await sgMail.send(msg);
+    return res.json({ success: true, message: "OTP sent to your email" });
   } catch (err) {
-    console.error("createEmployee error:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.error("❌ Email send error:", err.response?.body || err.message);
+    return res.status(500).json({ error: "Failed to send OTP email" });
   }
 };
 
-// GET employee by ID
-exports.getEmployee = async (req, res) => {
+// ==================== VALIDATE OTP ====================
+export const validateAccessCode = async (req, res) => {
+  const { email, accessCode } = req.body;
+  if (!email || !accessCode)
+    return res.status(400).json({ error: "email & accessCode required" });
+
+  const docRef = db.collection("employeeCodes").doc(email);
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) return res.status(404).json({ error: "No code found" });
+
+  const data = docSnap.data();
+  if (data.code !== accessCode)
+    return res.status(400).json({ error: "Invalid code" });
+  if (data.expiresAt.toDate() < new Date())
+    return res.status(400).json({ error: "Code expired" });
+
+  // ✅ Clear code
+  await docRef.delete();
+
+  // Lấy thông tin nhân viên
+  const snapshot = await db.collection("employees").where("email", "==", email).get();
+  if (snapshot.empty) return res.status(404).json({ error: "Employee not found" });
+
+  const employee = snapshot.docs[0].data();
+
+  return res.json({
+    success: true,
+    employee: {
+      id: employee.employeeId,
+      name: employee.name,
+      email: employee.email,
+      role: employee.role,
+      hasAccount: !!employee.username,
+    },
+  });
+};
+
+// ==================== SETUP ACCOUNT (FIRST TIME) ====================
+export const setupAccount = async (req, res) => {
+  const { email, username, password } = req.body;
+  if (!email || !username || !password)
+    return res.status(400).json({ error: "email, username, password required" });
+
   try {
-    const { employeeId } = req.body;
-    if (!employeeId) return res.status(400).json({ error: "employeeId required" });
+    // check tồn tại nhân viên
+    const snapshot = await db.collection("employees").where("email", "==", email).get();
+    if (snapshot.empty) return res.status(404).json({ error: "Employee not found" });
 
-    const doc = await db.collection("employees").doc(employeeId).get();
-    if (!doc.exists) return res.status(404).json({ error: "Employee not found" });
+    const docRef = snapshot.docs[0].ref;
+    const employee = snapshot.docs[0].data();
 
-    const data = doc.data();
+    if (employee.username) {
+      return res.status(400).json({ error: "Account already setup" });
+    }
+
+    // check trùng username
+    const userCheck = await db.collection("employees").where("username", "==", username).get();
+    if (!userCheck.empty) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await docRef.update({
+      username,
+      password: hashedPassword,
+    });
+
+    return res.json({ success: true, message: "Account setup successfully" });
+  } catch (err) {
+    console.error("❌ SetupAccount error:", err);
+    return res.status(500).json({ error: "Server error during setup" });
+  }
+};
+
+// ==================== LOGIN EMPLOYEE ====================
+export const loginEmployee = async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password)
+    return res.status(400).json({ error: "username & password required" });
+
+  try {
+    const snapshot = await db.collection("employees").where("username", "==", username).get();
+    if (snapshot.empty) {
+      console.log("❌ Không tìm thấy username:", username);
+      return res.status(404).json({ error: "Invalid username or password" });
+    }
+
+    const employee = snapshot.docs[0].data();
+
+    const isMatch = await bcrypt.compare(password, employee.password);
+
+    if (!isMatch) return res.status(400).json({ error: "Invalid username or password" });
+
+    // ✅ Generate JWT
+    const token = jwt.sign(
+      { id: employee.employeeId, role: employee.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
     return res.json({
+      success: true,
+      token,
       employee: {
-        ...data,
-        createdAt: data.createdAt?.toDate().toISOString(),
+        id: employee.employeeId,
+        name: employee.name,
+        email: employee.email,
+        role: employee.role,
       },
     });
   } catch (err) {
-    console.error("getEmployee error:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-};
-
-// LIST all employees
-exports.listEmployees = async (req, res) => {
-  try {
-    const snapshot = await db.collection("employees").orderBy("createdAt", "desc").get();
-    const employees = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        createdAt: data.createdAt?.toDate().toISOString(),
-      };
-    });
-
-    return res.json({ employees });
-  } catch (err) {
-    console.error("listEmployees error:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-};
-
-// UPDATE employee
-exports.updateEmployee = async (req, res) => {
-  try {
-    const { employeeId, name, phone, email, role, address, status } = req.body;
-    if (!employeeId) return res.status(400).json({ error: "employeeId required" });
-
-    const docRef = db.collection("employees").doc(employeeId);
-    const doc = await docRef.get();
-    if (!doc.exists) return res.status(404).json({ error: "Employee not found" });
-
-    const updateData = {};
-    if (name) updateData.name = name;
-    if (phone) updateData.phone = phone;
-    if (email) updateData.email = email;
-    if (role) updateData.role = role;
-    if (address) updateData.address = address;
-    if (status) updateData.status = status;
-
-    await docRef.update(updateData);
-
-    return res.json({ success: true, updated: updateData });
-  } catch (err) {
-    console.error("updateEmployee error:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-};
-
-// DELETE employee
-exports.deleteEmployee = async (req, res) => {
-  try {
-    const { employeeId } = req.body;
-    if (!employeeId) return res.status(400).json({ error: "employeeId required" });
-
-    const docRef = db.collection("employees").doc(employeeId);
-    const doc = await docRef.get();
-    if (!doc.exists) return res.status(404).json({ error: "Employee not found" });
-
-    await docRef.delete();
-    console.log(`Employee deleted: ${employeeId}`);
-
-    return res.json({ success: true });
-  } catch (err) {
-    console.error("deleteEmployee error:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.error("❌ LoginEmployee error:", err);
+    return res.status(500).json({ error: "Server error during login" });
   }
 };

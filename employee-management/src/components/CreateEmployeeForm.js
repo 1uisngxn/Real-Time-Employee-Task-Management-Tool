@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { collection, addDoc, doc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
 
 export default function CreateEmployeeForm({ onClose, onSuccess }) {
   const [newEmployee, setNewEmployee] = useState({
@@ -8,9 +6,11 @@ export default function CreateEmployeeForm({ onClose, onSuccess }) {
     email: "",
     phone: "",
     address: "",
-    role: "Staff",
+    role: "Employee",
     status: "Active",
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,23 +18,32 @@ export default function CreateEmployeeForm({ onClose, onSuccess }) {
       alert("Please enter name and email");
       return;
     }
+
     try {
-      await addDoc(collection(db, "employees"), {
-        ...newEmployee,
-        createdAt: new Date().toISOString(),
-        employeeId: doc(collection(db, "employees")).id,
+      setLoading(true);
+      const res = await fetch("http://localhost:5000/api/owner/CreateEmployee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEmployee),
       });
-      onSuccess(); // reload danh sách
-      onClose();   // đóng modal
+      const data = await res.json();
+      if (res.ok && data.success) {
+        onSuccess();
+        onClose();
+      } else {
+        alert(data.error || "Create failed");
+      }
     } catch (err) {
-      console.error("Error creating employee:", err.message);
+      console.error(err);
+      alert("Server error. Check console.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
       <div className="bg-white rounded-lg p-8 w-[70%] max-w-4xl">
-        {/* Title */}
         <h3 className="text-3xl font-bold mb-6 text-gray-800">Create New Employee</h3>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -98,7 +107,7 @@ export default function CreateEmployeeForm({ onClose, onSuccess }) {
                 className="border p-3 rounded text-lg"
               >
                 <option value="Manager">Manager</option>
-                <option value="Staff">Staff</option>
+                <option value="Employee">Employee</option>
               </select>
             </div>
             <div className="flex-1 flex flex-col">
@@ -125,9 +134,10 @@ export default function CreateEmployeeForm({ onClose, onSuccess }) {
             </button>
             <button
               type="submit"
-              className="px-6 py-3 bg-blue-600 text-white rounded-md text-lg hover:bg-blue-700 transition"
+              disabled={loading}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md text-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
-              Create
+              {loading ? "Creating..." : "Create"}
             </button>
           </div>
         </form>

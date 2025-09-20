@@ -5,32 +5,44 @@ function LoginPage() {
   const [phone, setPhone] = useState("");
   const navigate = useNavigate();
 
-  const API_URL = "http://localhost:5000/api/owner"; // backend chạy ở 5000
+  const API_URL = "http://localhost:5000/api/owner";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("👉 Submit clicked, phone:", phone);
+
     try {
       const res = await fetch(`${API_URL}/CreateNewAccessCode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber: phone }),
       });
+
       const data = await res.json();
       if (data.success) {
         alert("OTP sent! (mock: " + data.accessCode + ")");
-        // ✅ chuyển sang trang ValidatePage, truyền phone qua state
         navigate("/validate", { state: { phone } });
       } else {
-        alert("Error: " + data.message);
+        alert("Error: " + (data.message || "Unknown error"));
       }
     } catch (err) {
+      console.error("👉 API error:", err);
       alert("API error: " + err.message);
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
-      <div className="bg-white shadow-2xl rounded-2xl px-10 py-12 w-full max-w-md border border-gray-100">
+      <div className="relative bg-white shadow-2xl rounded-2xl px-10 py-12 w-full max-w-md border border-gray-100">
+        {/* Back button */}
+        <button
+          onClick={() => navigate("/chooseRole")}
+          className="absolute top-4 left-4 flex items-center text-gray-500 hover:text-orange-500 transition"
+        >
+          <span className="text-lg mr-1">←</span>
+          <span className="text-sm font-medium">Back</span>
+        </button>
+
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <div className="px-5 py-2 rounded-xl bg-orange-500 text-white font-bold text-lg shadow-md tracking-wide">
@@ -46,7 +58,7 @@ function LoginPage() {
           </p>
         </div>
 
-        {/* Form nhập số điện thoại */}
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <input

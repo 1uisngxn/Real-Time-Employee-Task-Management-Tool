@@ -8,7 +8,7 @@ export default function EditEmployeeForm({ employee, onClose, onSuccess }) {
     email: "",
     phone: "",
     address: "",
-    role: "Staff",
+    role: "Employee",
     status: "Active",
   });
 
@@ -19,7 +19,7 @@ export default function EditEmployeeForm({ employee, onClose, onSuccess }) {
         email: employee.email || "",
         phone: employee.phone || "",
         address: employee.address || "",
-        role: employee.role || "Staff",
+        role: employee.role || "Employee",
         status: employee.status || "Active",
       });
     }
@@ -27,18 +27,30 @@ export default function EditEmployeeForm({ employee, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!updatedEmployee.name || !updatedEmployee.email) {
       alert("Please enter name and email");
       return;
     }
+
+    if (!employee?.employeeId) {
+      alert("Employee ID missing!");
+      console.error("❌ employeeId is undefined in employee object:", employee);
+      return;
+    }
+
     try {
-      await updateDoc(doc(db, "employees", employee.id), {
+      await updateDoc(doc(db, "employees", employee.employeeId), {
         ...updatedEmployee,
       });
-      onSuccess(); // reload danh sách
-      onClose();   // đóng modal
+
+      console.log("✅ Employee updated:", updatedEmployee);
+
+      if (typeof onSuccess === "function") onSuccess(); // reload danh sách
+      if (typeof onClose === "function") onClose();     // đóng modal
     } catch (err) {
-      console.error("Error updating employee:", err.message);
+      console.error("❌ Error updating employee:", err);
+      alert("Update failed: " + err.message);
     }
   };
 
@@ -51,7 +63,9 @@ export default function EditEmployeeForm({ employee, onClose, onSuccess }) {
             type="text"
             placeholder="Name"
             value={updatedEmployee.name}
-            onChange={(e) => setUpdatedEmployee({ ...updatedEmployee, name: e.target.value })}
+            onChange={(e) =>
+              setUpdatedEmployee({ ...updatedEmployee, name: e.target.value })
+            }
             className="border p-2 rounded"
             required
           />
@@ -59,7 +73,9 @@ export default function EditEmployeeForm({ employee, onClose, onSuccess }) {
             type="email"
             placeholder="Email"
             value={updatedEmployee.email}
-            onChange={(e) => setUpdatedEmployee({ ...updatedEmployee, email: e.target.value })}
+            onChange={(e) =>
+              setUpdatedEmployee({ ...updatedEmployee, email: e.target.value })
+            }
             className="border p-2 rounded"
             required
           />
@@ -67,27 +83,35 @@ export default function EditEmployeeForm({ employee, onClose, onSuccess }) {
             type="text"
             placeholder="Phone"
             value={updatedEmployee.phone}
-            onChange={(e) => setUpdatedEmployee({ ...updatedEmployee, phone: e.target.value })}
+            onChange={(e) =>
+              setUpdatedEmployee({ ...updatedEmployee, phone: e.target.value })
+            }
             className="border p-2 rounded"
           />
           <input
             type="text"
             placeholder="Address"
             value={updatedEmployee.address}
-            onChange={(e) => setUpdatedEmployee({ ...updatedEmployee, address: e.target.value })}
+            onChange={(e) =>
+              setUpdatedEmployee({ ...updatedEmployee, address: e.target.value })
+            }
             className="border p-2 rounded"
           />
           <select
             value={updatedEmployee.role}
-            onChange={(e) => setUpdatedEmployee({ ...updatedEmployee, role: e.target.value })}
+            onChange={(e) =>
+              setUpdatedEmployee({ ...updatedEmployee, role: e.target.value })
+            }
             className="border p-2 rounded"
           >
             <option value="Manager">Manager</option>
-            <option value="Staff">Staff</option>
+            <option value="Employee">Employee</option>
           </select>
           <select
             value={updatedEmployee.status}
-            onChange={(e) => setUpdatedEmployee({ ...updatedEmployee, status: e.target.value })}
+            onChange={(e) =>
+              setUpdatedEmployee({ ...updatedEmployee, status: e.target.value })
+            }
             className="border p-2 rounded"
           >
             <option value="Active">Active</option>

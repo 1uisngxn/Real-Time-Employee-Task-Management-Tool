@@ -38,7 +38,7 @@ export default function EmployeeSearchFilter({ onSearch, role, status, onRoleCha
       >
         <option value="All">All Roles</option>
         <option value="Manager">Manager</option>
-        <option value="Staff">Staff</option>
+        <option value="Staff">Employee</option>
       </select>
 
       {/* Status Filter */}
